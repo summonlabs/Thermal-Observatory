@@ -1,0 +1,18 @@
+Thermal Observatory
+
+Copyright 2026 Summon Software Labs.
+
+Thermal Observatory is an open-source, vendor-neutral runtime for making thermal behaviour in a
+data centre a first-class, replayable, provenance-aware system record with explicit headroom,
+hotspot, coupling, derating and attribution evidence.
+
+This product is licensed under the Apache License, Version 2.0. See the
+LICENSE file in this distribution for the full license text.
+
+Thermal Observatory does not collect or transmit any telemetry. All records are written to local
+files chosen by the operator and never leave the machine running the software. The runtime opens no
+network socket, no device, no driver and no privileged API.
+
+Thermal Observatory accepts contributions from individuals and organizations on the
+terms of the Apache License 2.0 without requiring a Contributor License
+Agreement (CLA). See CONTRIBUTING.md for contribution guidance.

@@ -1,0 +1,10 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+# The exported target links Threads::Threads, so a consumer has to resolve it too. Without this the
+# package configures and then fails at generate time with an unknown imported target.
+find_dependency(Threads)
+
+include("${CMAKE_CURRENT_LIST_DIR}/ThermalObservatoryTargets.cmake")
+
+check_required_components(ThermalObservatory)

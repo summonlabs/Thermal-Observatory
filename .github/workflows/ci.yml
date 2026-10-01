@@ -1,0 +1,54 @@
+name: ci
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        compiler: [ gcc, clang ]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: >
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_CXX_COMPILER=${{ matrix.compiler == 'gcc' && 'g++' || 'clang++' }}
+          -DTHERMAL_BUILD_TESTS=ON -DTHERMAL_BUILD_TOOLS=ON
+          -DTHERMAL_BUILD_EXAMPLES=ON -DTHERMAL_BUILD_BENCHMARKS=ON
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Package
+        run: cpack --config build/CPackConfig.cmake -B build -G TGZ
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up the MSVC developer environment
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Configure
+        run: >
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+          -DTHERMAL_BUILD_TESTS=ON -DTHERMAL_BUILD_TOOLS=ON
+          -DTHERMAL_BUILD_EXAMPLES=ON -DTHERMAL_BUILD_BENCHMARKS=ON
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Package
+        run: cpack --config build/CPackConfig.cmake -B build -G ZIP
