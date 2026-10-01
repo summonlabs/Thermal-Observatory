@@ -3,8 +3,10 @@
 
 #include "tobsv/persistence/lock.hpp"
 
+#include <cstdint>
 #include <cstdio>
 #include <string>
+#include <system_error>
 #include <utility>
 
 #if defined(_WIN32)
@@ -117,13 +119,7 @@ Status SingleWriterLock::acquire(const std::filesystem::path& path) {
   return Status::success();
 }
 
-bool SingleWriterLock::held() const noexcept {
-#if defined(_WIN32)
-  return handle_ != nullptr;
-#else
-  return handle_ != nullptr;
-#endif
-}
+bool SingleWriterLock::held() const noexcept { return handle_ != nullptr; }
 
 void SingleWriterLock::release() {
   if (!held()) {

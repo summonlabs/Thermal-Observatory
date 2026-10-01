@@ -312,9 +312,22 @@ TOBSV_TEST("hardening", "an_invalid_utf8_label_is_refused_by_the_encoder") {
   TOBSV_ASSERT_FAILS_WITH(decode_record(document.value(), limits), ErrorCode::kMalformedInput);
 }
 
-TOBSV_TEST("hardening", "reading_a_directory_as_a_file_fails_instead_of_looping") {
+TOBSV_TEST("hardening", "a_directory_is_refused_as_a_file_on_every_platform") {
+  // Windows fails at the open; Linux opens the directory and fails on the first read, after
+  // reporting the directory's own size. The refusal is explicit so that both behave the same, and
+  // so that a size bound is never reported for something that is not a file.
   ScratchDirectory scratch("read-directory");
-  TOBSV_ASSERT_FAILS_WITH(read_file_bytes(scratch.path(), 1U << 20), ErrorCode::kNotFound);
+  TOBSV_ASSERT_TRUE(std::filesystem::is_directory(scratch.path()));
+  TOBSV_ASSERT_FAILS_WITH(read_file_bytes(scratch.path(), 1U << 20), ErrorCode::kIoFailure);
+  TOBSV_ASSERT_TRUE(std::filesystem::is_directory(scratch.path()));
+
+  // Publishing over a directory would otherwise remove it on the fallback path.
+  TOBSV_ASSERT_FAILS_WITH(write_file_atomic(scratch.path(), "bytes"), ErrorCode::kIoFailure);
+  TOBSV_ASSERT_TRUE(std::filesystem::is_directory(scratch.path()));
+
+  // A path that does not exist is still reported as missing rather than as unusable.
+  TOBSV_ASSERT_FAILS_WITH(read_file_bytes(scratch.file("absent.txt"), 1U << 20),
+                          ErrorCode::kNotFound);
 }
 
 TOBSV_TEST("hardening", "a_record_that_fails_to_decode_is_never_partially_applied") {

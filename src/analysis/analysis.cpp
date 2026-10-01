@@ -12,8 +12,6 @@
 namespace tobsv {
 namespace {
 
-int level_rank(ThresholdLevel level) { return static_cast<int>(static_cast<unsigned>(level)); }
-
 JsonValue headroom_array(const std::vector<HeadroomReport>& reports) {
   JsonValue out = JsonValue::array();
   for (const HeadroomReport& report : reports) {

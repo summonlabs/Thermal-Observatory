@@ -31,22 +31,35 @@ std::atomic<unsigned> g_scratch_counter{0};
 
 std::string cli_path() {
   static const std::string resolved = [] {
+    std::error_code error;
 #if defined(_WIN32)
     wchar_t buffer[32768];
     const DWORD length = ::GetModuleFileNameW(nullptr, buffer, 32768);
     const std::filesystem::path executable =
         length == 0 ? std::filesystem::path("tobsv_tests.exe")
                     : std::filesystem::path(std::wstring(buffer, buffer + length));
-    std::filesystem::path tool = executable.parent_path().parent_path() / "tools" /
-                                 "thermal-observatory.exe";
-    return tool.string();
+    const std::string name = "thermal-observatory.exe";
 #else
-    std::error_code error;
     const std::filesystem::path executable = std::filesystem::read_symlink("/proc/self/exe", error);
-    const std::filesystem::path base =
-        error ? std::filesystem::current_path() : executable.parent_path().parent_path();
-    return (base / "tools" / "thermal-observatory").string();
+    const std::string name = "thermal-observatory";
 #endif
+    const std::filesystem::path directory =
+        error || executable.empty() ? std::filesystem::current_path() : executable.parent_path();
+    // A single-configuration generator puts the tool under tools/ beside the test directory. A
+    // multi-configuration generator adds a per-configuration directory to both, so that layout is
+    // probed as well rather than assumed away.
+    const std::filesystem::path candidates[3] = {
+        directory.parent_path() / "tools" / name,
+        directory.parent_path().parent_path() / "tools" / directory.filename() / name,
+        directory / name,
+    };
+    for (const std::filesystem::path& candidate : candidates) {
+      std::error_code probe;
+      if (std::filesystem::exists(candidate, probe) && !probe) {
+        return candidate.string();
+      }
+    }
+    return candidates[0].string();
   }();
   return resolved;
 }
@@ -60,8 +73,16 @@ CliRun run_cli(const std::string& arguments) {
   const std::filesystem::path capture =
       directory / ("output-" + std::to_string(run_counter.fetch_add(1)) + ".txt");
   std::filesystem::remove(capture, error);
-  const std::string command = "\"\"" + cli_path() + "\" " + arguments +
-                              " > \"" + capture.string() + "\" 2>&1\"";
+  std::string command;
+#if defined(_WIN32)
+  // cmd.exe removes the first and the last quote character of a command line that begins with a
+  // quoted program path, so the whole line is wrapped in one extra pair.
+  command = "\"\"" + cli_path() + "\" " + arguments + " > \"" + capture.string() + "\" 2>&1\"";
+#else
+  // A POSIX shell needs the program path quoted and nothing more; an extra pair of quotes would
+  // open a string that never closes.
+  command = "\"" + cli_path() + "\" " + arguments + " > \"" + capture.string() + "\" 2>&1";
+#endif
   run.exit_code = std::system(command.c_str());
   const Result<std::string> bytes = read_file_bytes(capture, 8U << 20);
   if (bytes.ok()) {

@@ -9,7 +9,7 @@ namespace tobsv {
 
 inline constexpr int kVersionMajor = 1;
 inline constexpr int kVersionMinor = 0;
-inline constexpr int kVersionPatch = 0;
+inline constexpr int kVersionPatch = 1;
 
 // Persistence format version. A reader refuses any other major version outright and reports a
 // version mismatch rather than attempting a best-effort interpretation.

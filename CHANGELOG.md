@@ -4,6 +4,39 @@ All notable changes to Thermal Observatory are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026
+
+Patch release. Fixes the Linux build. Nothing about the runtime's behaviour,
+its record format or its public interface changed.
+
+### Fixed
+
+* The analysis composition no longer defines a helper it does not use. Hotspot grouping and
+  derating appraisal keep and use their own copies of it; the one left behind when threshold
+  transition classification moved was dead. GCC and Clang reject an unused function of internal
+  linkage under `-Werror`; MSVC does not warn about it, so only the Linux jobs saw it.
+* The command line tool includes `<algorithm>` for `std::sort` rather than relying on the MSVC
+  standard library to provide it transitively, which libstdc++ does not.
+* The test framework header ends with a newline, as a source file must.
+* The test helper builds its child process command line for the shell that will actually run it.
+  The extra pair of quotes that defeats cmd.exe's quote removal left an unterminated string in a
+  POSIX shell, and the tool's location is now probed rather than assumed to sit beside the test
+  directory, so a multi-configuration generator resolves as well.
+* The writer lock includes `<cstdint>` and `<system_error>` for `intptr_t` and
+  `std::generic_category`, both of which only its POSIX branch uses and which no Windows compiler
+  therefore ever saw.
+* A directory offered where a file is expected is refused explicitly and identically on every
+  platform. Windows fails at the open, while Linux opens a directory successfully, reports the
+  directory's own size and fails only on the first read, so a size bound was reported for something
+  that was never a file. The same check on the atomic publish path stops the fallback from removing
+  an empty directory before renaming over it.
+
+### Validation
+
+* Windows with MSVC 19.44, Release and Debug: 205 tests, 0 failures.
+* Linux with GCC and with Clang against libstdc++: 205 tests, 0 failures, in CI and locally.
+* The install and independent `find_package` consumer proof passes on all three toolchains.
+
 ## [1.0.0] - 2026
 
 First release.

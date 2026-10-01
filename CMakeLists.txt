@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 3.22)
 # own thermal zones, place workloads or perform recovery.
 
 project(ThermalObservatory
-  VERSION 1.0.0
+  VERSION 1.0.1
   LANGUAGES CXX
   DESCRIPTION "Thermal observation, headroom, hotspot, coupling and derating evidence with explicit attribution limits"
   HOMEPAGE_URL "https://github.com/summonlabs/Thermal-Observatory")

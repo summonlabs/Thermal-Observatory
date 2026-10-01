@@ -98,6 +98,16 @@ Status stream_truncate(std::FILE* file, std::uint64_t size) {
 }
 
 Result<std::string> read_file_bytes(const std::filesystem::path& path, std::size_t max_bytes) {
+  // A directory is not a file, and the platforms disagree about what happens if you treat one as
+  // one: Windows fails at the open, while Linux opens it successfully and fails on the first read,
+  // after reporting the directory's own size as though it were the file's. Refusing here keeps the
+  // outcome identical everywhere and stops a size bound from being reported for something that was
+  // never a file.
+  std::error_code kind_error;
+  if (std::filesystem::is_directory(path, kind_error)) {
+    return Status::failure(ErrorCode::kIoFailure,
+                           path.string() + " is a directory, not a file");
+  }
   std::FILE* file = open_stream(path, "rb");
   if (file == nullptr) {
     return Status::failure(ErrorCode::kNotFound,
@@ -136,6 +146,13 @@ Result<std::string> read_file_bytes(const std::filesystem::path& path, std::size
 }
 
 Status write_file_atomic(const std::filesystem::path& path, std::string_view bytes) {
+  // The fallback below removes the destination before renaming. If the destination were a
+  // directory, that would delete it, so a directory destination is refused outright.
+  std::error_code kind_error;
+  if (std::filesystem::is_directory(path, kind_error)) {
+    return Status::failure(ErrorCode::kIoFailure,
+                           "cannot publish to " + path.string() + ": it is a directory");
+  }
   const std::filesystem::path temporary = path.string() + ".tmp";
   std::FILE* file = open_stream(temporary, "wb");
   if (file == nullptr) {

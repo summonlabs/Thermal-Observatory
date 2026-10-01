@@ -9,7 +9,9 @@
 // every record, anything the tool accepts is also something the log can hold, and anything the log
 // holds can be fed back through the tool.
 
+#include <algorithm>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <filesystem>
 #include <iostream>
